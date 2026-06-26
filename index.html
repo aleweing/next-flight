@@ -310,7 +310,8 @@
       <div class="section-label">Aeropuerto de salida</div>
       <div class="card">
         <div class="chip-group" id="chips-origin">
-          <button class="chip selected" data-iata="MAD">MAD · Madrid</button>
+          <button class="chip selected" data-iata="PMI">PMI · Palma de Mallorca</button>
+          <button class="chip" data-iata="MAD">MAD · Madrid</button>
           <button class="chip" data-iata="BCN">BCN · Barcelona</button>
           <button class="chip" data-iata="VLC">VLC · Valencia</button>
           <button class="chip" data-iata="AGP">AGP · Málaga</button>
@@ -489,10 +490,10 @@
 // ⚠️ Reemplaza con la URL de tu Cloudflare Worker (sin barra final)
 // Correcto:   'https://next-flight-proxy.TU-SUBDOMINIO.workers.dev'
 // Incorrecto: 'https://next-flight-proxy.TU-SUBDOMINIO.workers.dev/'
-const WORKER_URL = 'https://nex-flight.alewein.workers.dev';
+const WORKER_URL = 'https://nex-flight.aleweing.workers.dev';
 
 // ─── STATE ────────────────────────────────────────────────────────────
-let selectedOrigin    = 'MAD';
+let selectedOrigin    = 'PMI';
 let selectedDest      = 'EZE';
 let selectedPriceType = 'roundtrip';   // 'roundtrip' | 'oneway'
 let selectedSearchMode = 'date';       // 'date' | 'range' | 'flexible'
@@ -500,6 +501,7 @@ let selectedDirection  = 'esp-arg';    // 'esp-arg' | 'arg-esp'
 
 const AIRPORTS = {
   esp: [
+    { iata: 'PMI', label: 'PMI · Palma de Mallorca' },
     { iata: 'MAD', label: 'MAD · Madrid' },
     { iata: 'BCN', label: 'BCN · Barcelona' },
     { iata: 'VLC', label: 'VLC · Valencia' },
