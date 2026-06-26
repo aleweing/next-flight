@@ -299,6 +299,14 @@
     <!-- ── BUSCAR ── -->
     <section class="screen active" id="screen-buscar">
 
+      <div class="section-label">Dirección</div>
+      <div class="card">
+        <div class="segment-ctrl" id="directionTabs">
+          <button class="segment-btn active" data-value="esp-arg" onclick="setDirection('esp-arg', this)">🇪🇸 España → Argentina 🇦🇷</button>
+          <button class="segment-btn" data-value="arg-esp" onclick="setDirection('arg-esp', this)">🇦🇷 Argentina → España 🇪🇸</button>
+        </div>
+      </div>
+
       <div class="section-label">Aeropuerto de salida</div>
       <div class="card">
         <div class="chip-group" id="chips-origin">
@@ -487,6 +495,22 @@ let selectedOrigin    = 'MAD';
 let selectedDest      = 'EZE';
 let selectedPriceType = 'roundtrip';   // 'roundtrip' | 'oneway'
 let selectedSearchMode = 'date';       // 'date' | 'range' | 'flexible'
+let selectedDirection  = 'esp-arg';    // 'esp-arg' | 'arg-esp'
+
+const AIRPORTS = {
+  esp: [
+    { iata: 'MAD', label: 'MAD · Madrid' },
+    { iata: 'BCN', label: 'BCN · Barcelona' },
+    { iata: 'VLC', label: 'VLC · Valencia' },
+    { iata: 'AGP', label: 'AGP · Málaga' },
+  ],
+  arg: [
+    { iata: 'EZE', label: 'EZE · Buenos Aires' },
+    { iata: 'AEP', label: 'AEP · Aeroparque' },
+    { iata: 'COR', label: 'COR · Córdoba' },
+    { iata: 'ROS', label: 'ROS · Rosario' },
+  ],
+};
 let lastResults       = [];
 let lastMode          = 'date';
 let alerts            = JSON.parse(localStorage.getItem('nf_alerts') || '[]');
@@ -522,6 +546,31 @@ function setupChips(groupId, onChange) {
 
 function updateRouteBadge() {
   document.getElementById('routeBadge').textContent = `${selectedOrigin} → ${selectedDest}`;
+}
+
+// ─── DIRECTION ───────────────────────────────────────────────────────
+function setDirection(dir, btn) {
+  selectedDirection = dir;
+  document.querySelectorAll('#directionTabs .segment-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const originAirports = dir === 'esp-arg' ? AIRPORTS.esp : AIRPORTS.arg;
+  const destAirports   = dir === 'esp-arg' ? AIRPORTS.arg : AIRPORTS.esp;
+
+  renderChips('chips-origin', originAirports, (iata) => { selectedOrigin = iata; updateRouteBadge(); });
+  renderChips('chips-dest',   destAirports,   (iata) => { selectedDest   = iata; updateRouteBadge(); });
+
+  selectedOrigin = originAirports[0].iata;
+  selectedDest   = destAirports[0].iata;
+  updateRouteBadge();
+}
+
+function renderChips(groupId, airports, onChange) {
+  const group = document.getElementById(groupId);
+  group.innerHTML = airports.map((a, i) =>
+    `<button class="chip${i === 0 ? ' selected' : ''}" data-iata="${a.iata}">${a.label}</button>`
+  ).join('');
+  setupChips(groupId, onChange);
 }
 
 // ─── SEARCH MODE ─────────────────────────────────────────────────────
