@@ -4,16 +4,17 @@ PWA para encontrar vuelos baratos entre España y Argentina. Parte de la serie *
 
 ## Funcionalidades
 
-- **Búsqueda de vuelos** en tiempo real vía Google Flights (SerpApi)
+- **Búsqueda con fecha** — resultados exactos vía Google Flights (SerpApi)
+- **Búsqueda sin fecha** — encuentra la mejor semana disponible en los próximos meses
+- **Tipo de precio** — elige si el presupuesto es para ida y vuelta o solo ida
+- **Precio máximo** — filtra resultados por presupuesto en EUR
 - **Aeropuertos de salida:** MAD, BCN, VLC, AGP
 - **Aeropuertos de llegada:** EZE, AEP, COR, ROS
-- **Precio máximo:** filtra resultados por presupuesto
-- **Vuelos directos:** opción para excluir escalas
+- **Vuelos directos** — opción para excluir escalas
 - **Filtro por aerolínea:** Iberia, Air Europa, LATAM, Aerolíneas Argentinas y más
 - **Clase de cabina:** Económica, Premium Economy, Business, Primera
-- **Ida y vuelta o solo ida**
-- **Alertas de precio:** guarda búsquedas y comprueba si hay vuelos dentro del presupuesto
-- **Botón "Comprar"** con enlace directo a Google Flights con el vuelo preseleccionado
+- **Alertas de precio** — guarda búsquedas y comprueba si hay vuelos dentro del presupuesto
+- **Botón "Comprar / Ver vuelo"** con enlace directo a Google Flights con el vuelo preseleccionado
 - **Instalable en iPhone** como app nativa desde Safari
 
 ## Arquitectura
