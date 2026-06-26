@@ -522,9 +522,32 @@ document.addEventListener('DOMContentLoaded', () => {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const dayAfter = new Date();
   dayAfter.setDate(dayAfter.getDate() + 8);
-  document.getElementById('dateFrom').value  = tomorrow.toISOString().split('T')[0];
-  document.getElementById('rangeFrom').value = tomorrow.toISOString().split('T')[0];
-  document.getElementById('rangeTo').value   = dayAfter.toISOString().split('T')[0];
+  const tomorrowStr  = tomorrow.toISOString().split('T')[0];
+  const dayAfterStr  = dayAfter.toISOString().split('T')[0];
+
+  document.getElementById('dateFrom').value  = tomorrowStr;
+  document.getElementById('rangeFrom').value = tomorrowStr;
+  document.getElementById('rangeTo').value   = dayAfterStr;
+
+  // dateTo y rangeTo arrancan desde la fecha de salida
+  document.getElementById('dateTo').min   = tomorrowStr;
+  document.getElementById('rangeTo').min  = tomorrowStr;
+
+  // Cuando cambia dateFrom → actualizar min de dateTo
+  document.getElementById('dateFrom').addEventListener('change', function() {
+    const val = this.value;
+    const dateToEl = document.getElementById('dateTo');
+    dateToEl.min = val;
+    if (dateToEl.value && dateToEl.value < val) dateToEl.value = val;
+  });
+
+  // Cuando cambia rangeFrom → actualizar min de rangeTo
+  document.getElementById('rangeFrom').addEventListener('change', function() {
+    const val = this.value;
+    const rangeToEl = document.getElementById('rangeTo');
+    rangeToEl.min = val;
+    if (rangeToEl.value && rangeToEl.value < val) rangeToEl.value = val;
+  });
 
   setupChips('chips-origin', (iata) => { selectedOrigin = iata; updateRouteBadge(); });
   setupChips('chips-dest',   (iata) => { selectedDest   = iata; updateRouteBadge(); });
