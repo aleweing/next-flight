@@ -319,24 +319,28 @@
         </div>
       </div>
 
+      <div class="section-label">Modo de búsqueda</div>
+      <div class="card">
+        <div class="segment-ctrl" id="searchModeTabs" style="margin-bottom:16px;">
+          <button class="segment-btn active" data-value="date" onclick="setSearchMode('date', this)">📅 Fecha</button>
+          <button class="segment-btn" data-value="range" onclick="setSearchMode('range', this)">📆 Rango</button>
+          <button class="segment-btn" data-value="flexible" onclick="setSearchMode('flexible', this)">🔍 Sin fecha</button>
+        </div>
+        <div id="modeHint" style="font-size:12px;color:var(--muted);line-height:1.5;">
+          Busca vuelos para una fecha exacta de salida.
+        </div>
+      </div>
+
       <div class="section-label">Tipo de precio</div>
       <div class="card">
-        <div class="segment-ctrl" id="priceTypeTabs" style="margin-bottom:16px;">
+        <div class="segment-ctrl" id="priceTypeTabs">
           <button class="segment-btn active" data-value="roundtrip" onclick="setPriceType('roundtrip', this)">↩️ Ida y vuelta</button>
           <button class="segment-btn" data-value="oneway" onclick="setPriceType('oneway', this)">➡️ Solo ida</button>
-        </div>
-        <div class="toggle-row">
-          <span>Sin fecha — busca las mejores fechas</span>
-          <label class="toggle">
-            <input type="checkbox" id="flexibleDate" onchange="toggleFlexibleDate(this.checked)" />
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
         </div>
       </div>
 
       <div id="dateFields">
-        <div class="section-label">Fechas</div>
+        <div class="section-label">Fecha de salida</div>
         <div class="card">
           <div class="row-2">
             <div class="field">
@@ -346,6 +350,22 @@
             <div class="field" id="dateToWrap">
               <label>VUELTA (opcional)</label>
               <input type="date" id="dateTo" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rangeFields" style="display:none;">
+        <div class="section-label">Rango de fechas <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(máx. 30 días)</span></div>
+        <div class="card">
+          <div class="row-2">
+            <div class="field">
+              <label>DESDE</label>
+              <input type="date" id="rangeFrom" />
+            </div>
+            <div class="field">
+              <label>HASTA</label>
+              <input type="date" id="rangeTo" />
             </div>
           </div>
         </div>
@@ -463,19 +483,23 @@
 const WORKER_URL = 'https://nex-flight.alewein.workers.dev';
 
 // ─── STATE ────────────────────────────────────────────────────────────
-let selectedOrigin = 'MAD';
-let selectedDest   = 'EZE';
+let selectedOrigin    = 'MAD';
+let selectedDest      = 'EZE';
 let selectedPriceType = 'roundtrip';   // 'roundtrip' | 'oneway'
-let isFlexible     = false;
-let lastResults    = [];
-let lastMode       = 'date';           // 'date' | 'flexible'
-let alerts         = JSON.parse(localStorage.getItem('nf_alerts') || '[]');
+let selectedSearchMode = 'date';       // 'date' | 'range' | 'flexible'
+let lastResults       = [];
+let lastMode          = 'date';
+let alerts            = JSON.parse(localStorage.getItem('nf_alerts') || '[]');
 
 // ─── INIT ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  document.getElementById('dateFrom').value = tomorrow.toISOString().split('T')[0];
+  const dayAfter = new Date();
+  dayAfter.setDate(dayAfter.getDate() + 8);
+  document.getElementById('dateFrom').value  = tomorrow.toISOString().split('T')[0];
+  document.getElementById('rangeFrom').value = tomorrow.toISOString().split('T')[0];
+  document.getElementById('rangeTo').value   = dayAfter.toISOString().split('T')[0];
 
   setupChips('chips-origin', (iata) => { selectedOrigin = iata; updateRouteBadge(); });
   setupChips('chips-dest',   (iata) => { selectedDest   = iata; updateRouteBadge(); });
@@ -500,31 +524,43 @@ function updateRouteBadge() {
   document.getElementById('routeBadge').textContent = `${selectedOrigin} → ${selectedDest}`;
 }
 
+// ─── SEARCH MODE ─────────────────────────────────────────────────────
+const MODE_HINTS = {
+  date:     'Busca vuelos para una fecha exacta de salida.',
+  range:    'Busca el día más barato dentro de un rango (máx. 30 días). Una llamada por día.',
+  flexible: 'Sin fecha fija — muestra las mejores semanas disponibles en los próximos meses.',
+};
+
+function setSearchMode(mode, btn) {
+  selectedSearchMode = mode;
+  document.querySelectorAll('#searchModeTabs .segment-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('modeHint').textContent = MODE_HINTS[mode] || '';
+
+  document.getElementById('dateFields').style.display  = mode === 'date'     ? '' : 'none';
+  document.getElementById('rangeFields').style.display = mode === 'range'    ? '' : 'none';
+
+  // En modo flexible, solo ida tiene más sentido; ocultamos vuelta
+  const dateToWrap = document.getElementById('dateToWrap');
+  if (mode === 'flexible') {
+    dateToWrap.style.display = 'none';
+  } else if (selectedPriceType === 'roundtrip') {
+    dateToWrap.style.display = '';
+  }
+}
+
 // ─── PRICE TYPE ───────────────────────────────────────────────────────
 function setPriceType(type, btn) {
   selectedPriceType = type;
   document.querySelectorAll('#priceTypeTabs .segment-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
-  // Mostrar/ocultar campo de fecha de vuelta según tipo
   const dateToWrap = document.getElementById('dateToWrap');
-  if (type === 'oneway') {
+  if (type === 'oneway' || selectedSearchMode === 'flexible') {
     dateToWrap.style.display = 'none';
     document.getElementById('dateTo').value = '';
   } else {
     dateToWrap.style.display = '';
-  }
-}
-
-// ─── FLEXIBLE DATE TOGGLE ─────────────────────────────────────────────
-function toggleFlexibleDate(checked) {
-  isFlexible = checked;
-  const dateFields = document.getElementById('dateFields');
-  dateFields.style.display = checked ? 'none' : '';
-
-  if (checked) {
-    document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value   = '';
   }
 }
 
@@ -538,43 +574,59 @@ function showScreen(name) {
 
 // ─── SEARCH ───────────────────────────────────────────────────────────
 async function buscarVuelos() {
-  const dateFrom = document.getElementById('dateFrom').value;
+  const mode = selectedSearchMode;
 
-  // Validación: si no es flexible, fecha de salida obligatoria
-  if (!isFlexible && !dateFrom) {
-    toast('Elige una fecha de salida o activa "Sin fecha"', 'error');
-    return;
+  // Validaciones por modo
+  if (mode === 'date') {
+    if (!document.getElementById('dateFrom').value) {
+      toast('Elige una fecha de salida', 'error'); return;
+    }
+  } else if (mode === 'range') {
+    const rf = document.getElementById('rangeFrom').value;
+    const rt = document.getElementById('rangeTo').value;
+    if (!rf || !rt) { toast('Elige fecha inicio y fin del rango', 'error'); return; }
+    const days = (new Date(rt) - new Date(rf)) / 86400000 + 1;
+    if (days < 1)  { toast('La fecha de fin debe ser posterior al inicio', 'error'); return; }
+    if (days > 30) { toast('El rango no puede superar 30 días', 'error'); return; }
   }
 
   const params = {
     origin:      selectedOrigin,
     destination: selectedDest,
-    dateFrom:    isFlexible ? null : dateFrom,
-    dateTo:      (!isFlexible && selectedPriceType === 'roundtrip')
-                   ? (document.getElementById('dateTo').value || null)
-                   : null,
     adults:      document.getElementById('adults').value,
     cabin:       document.getElementById('cabin').value,
     maxPrice:    document.getElementById('maxPrice').value || null,
     airline:     document.getElementById('airline').value || null,
     nonStop:     document.getElementById('nonStop').checked,
     priceType:   selectedPriceType,
-    flexible:    isFlexible,
+    mode,
   };
+
+  if (mode === 'date') {
+    params.dateFrom = document.getElementById('dateFrom').value;
+    params.dateTo   = selectedPriceType === 'roundtrip'
+      ? (document.getElementById('dateTo').value || null) : null;
+  } else if (mode === 'range') {
+    params.dateFrom = document.getElementById('rangeFrom').value;
+    params.rangeTo  = document.getElementById('rangeTo').value;
+  }
+  // flexible: sin fecha
 
   showScreen('resultados');
 
-  // Banner modo flexible
   const banner = document.getElementById('flexibleBanner');
-  banner.classList.toggle('visible', isFlexible);
+  banner.classList.toggle('visible', mode === 'flexible');
+
+  const loadingMsg = {
+    date:     `Buscando vuelos ${params.origin} → ${params.destination}…`,
+    range:    `Buscando el día más barato… esto puede tardar unos segundos`,
+    flexible: `Buscando mejores fechas ${params.origin} → ${params.destination}…`,
+  };
 
   document.getElementById('resultsContainer').innerHTML = `
     <div class="state-box">
       <div class="spinner"></div>
-      <div class="state-sub">${isFlexible
-        ? `Buscando mejores fechas ${params.origin} → ${params.destination}…`
-        : `Buscando vuelos ${params.origin} → ${params.destination}…`
-      }</div>
+      <div class="state-sub">${loadingMsg[mode]}</div>
     </div>`;
 
   if (params.maxPrice) saveAlert(params);
@@ -610,9 +662,10 @@ function renderResults(offers, maxPrice, mode) {
       <div class="state-box">
         <div class="state-icon">🔭</div>
         <div class="state-title">Sin resultados</div>
-        <div class="state-sub">${mode === 'flexible'
-          ? 'No se encontraron vuelos para esta ruta en los próximos 6 meses con los filtros indicados.'
-          : 'Prueba otras fechas, amplía el presupuesto o cambia el filtro de aerolínea.'
+        <div class="state-sub">${
+          mode === 'flexible' ? 'No se encontraron vuelos en los próximos meses con esos filtros. Prueba ampliar el presupuesto.' :
+          mode === 'range'    ? 'Ningún día del rango tiene vuelos dentro del presupuesto. Prueba ampliar el rango o el precio máximo.' :
+                                'Prueba otra fecha, amplía el presupuesto o cambia el filtro de aerolínea.'
         }</div>
       </div>`;
     return;
