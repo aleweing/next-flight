@@ -421,6 +421,7 @@
             <option value="AF">Air France (AF)</option>
             <option value="KL">KLM (KL)</option>
             <option value="LH">Lufthansa (LH)</option>
+            <option value="IB3">LEVEL (IB3)</option>
           </select>
         </div>
         <div class="toggle-row">
@@ -1022,7 +1023,7 @@ function getAirlineName(code) {
   const map = {
     IB:'Iberia', UX:'Air Europa', LA:'LATAM', AR:'Aerolíneas Arg.',
     LX:'Swiss', AF:'Air France', KL:'KLM', LH:'Lufthansa',
-    VY:'Vueling', AZ:'ITA Airways', BA:'British Airways',
+    VY:'Vueling', AZ:'ITA Airways', BA:'British Airways', IB3:'LEVEL',
     TK:'Turkish', EK:'Emirates', QR:'Qatar', AV:'Avianca', CM:'Copa'
   };
   return map[code] || code;
