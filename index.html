@@ -299,6 +299,22 @@
     <!-- ── BUSCAR ── -->
     <section class="screen active" id="screen-buscar">
 
+      <div class="section-label">Preset rápido</div>
+      <div class="card" style="border-color:rgba(139,92,246,0.45);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px;">🎄 Navidad en Argentina</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.6;">
+              PMI → EZE · 1 escala · 28 días<br>
+              Salidas del 10 al 20 de diciembre
+            </div>
+          </div>
+          <button class="btn-primary" style="width:auto;padding:11px 20px;margin:0;font-size:14px;flex-shrink:0;" onclick="buscarNavidad()">
+            Buscar
+          </button>
+        </div>
+      </div>
+
       <div class="section-label">Dirección</div>
       <div class="card">
         <div class="segment-ctrl" id="directionTabs">
@@ -1063,6 +1079,57 @@ function buildBookUrl(offer) {
     const date = (seg.departure.at || '').split('T')[0].replace(/-/g,'');
     return `https://www.google.com/flights?hl=es#flt=${orig}.${dst}.${date};c:EUR;e:1;s:0*1;sd:1;t:f`;
   } catch { return 'https://www.google.com/flights'; }
+}
+
+// ─── PRESET: NAVIDAD EN ARGENTINA ────────────────────────────────────
+async function buscarNavidad() {
+  // Año destino: siempre el próximo diciembre que quede por llegar
+  const now  = new Date();
+  const year = now > new Date(now.getFullYear(), 11, 20)
+    ? now.getFullYear() + 1
+    : now.getFullYear();
+
+  const dateFrom = `${year}-12-10`;
+  const rangeTo  = `${year}-12-20`;
+
+  showScreen('resultados');
+  document.getElementById('flexibleBanner').classList.remove('visible');
+  document.getElementById('resultsContainer').innerHTML = `
+    <div class="state-box">
+      <div class="spinner"></div>
+      <div class="state-sub">Buscando 11 fechas PMI → EZE · Navidad ${year}…<br>
+        <span style="font-size:11px;color:var(--muted)">1 escala · 28 días · ida y vuelta</span>
+      </div>
+    </div>`;
+
+  try {
+    const url = new URL(`${WORKER_URL}/search`);
+    url.searchParams.set('origin',       'PMI');
+    url.searchParams.set('destination',  'EZE');
+    url.searchParams.set('mode',         'range');
+    url.searchParams.set('dateFrom',     dateFrom);
+    url.searchParams.set('rangeTo',      rangeTo);
+    url.searchParams.set('returnOffset', '28');
+    url.searchParams.set('maxStops',     '1');
+    url.searchParams.set('priceType',    'roundtrip');
+    url.searchParams.set('adults',       '1');
+    url.searchParams.set('cabin',        'ECONOMY');
+
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error de API');
+
+    lastResults = data.offers || [];
+    lastMode    = 'range';
+    renderResults(lastResults, null, lastMode);
+  } catch (err) {
+    document.getElementById('resultsContainer').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">⚠️</div>
+        <div class="state-title">No se pudo conectar</div>
+        <div class="state-sub">${err.message}</div>
+      </div>`;
+  }
 }
 
 function toast(msg, type = '') {
