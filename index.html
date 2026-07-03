@@ -754,9 +754,10 @@ function renderResults(offers, maxPrice, mode) {
         <div class="state-icon">🔭</div>
         <div class="state-title">Sin resultados</div>
         <div class="state-sub">${
-          mode === 'flexible' ? 'No se encontraron vuelos en los próximos meses con esos filtros. Prueba ampliar el presupuesto.' :
-          mode === 'range'    ? 'Ningún día del rango tiene vuelos dentro del presupuesto. Prueba ampliar el rango o el precio máximo.' :
-                                'Prueba otra fecha, amplía el presupuesto o cambia el filtro de aerolínea.'
+          mode === 'flexible' ? 'No se encontraron vuelos en los próximos meses con esos filtros.' :
+          mode === 'range' && maxPrice ? 'Ningún día del rango tiene vuelos dentro del presupuesto. Prueba ampliar el rango o el precio máximo.' :
+          mode === 'range'    ? 'No se encontraron vuelos para ese rango de fechas. Prueba otro período.' :
+                                'Prueba otra fecha o cambia el filtro de aerolínea.'
         }</div>
       </div>`;
     return;
