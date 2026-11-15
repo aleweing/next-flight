@@ -1126,21 +1126,39 @@ function addDaysStr(dateStr, days) {
   return d.toISOString().slice(0, 10);
 }
 
+// ¿El enlace del Worker lleva a un vuelo concreto? Hoy devuelve la portada
+// de Google Flights ("https://www.google.com/flights"), que no sirve.
+function isSpecificLink(link) {
+  try {
+    const u = new URL(link);
+    const generic = /(^|\.)google\.[a-z.]+$/.test(u.hostname)
+      && /^\/(travel\/)?flights\/?$/.test(u.pathname)
+      && !u.searchParams.has('tfs') && !u.searchParams.has('q') && u.hash.length <= 1;
+    return !generic;
+  } catch { return false; }
+}
+
+// Fecha YYYY-MM-DD de un valor tipo "2027-02-10 13:00" o "2027-02-10T13:00".
+function dateOnly(value) {
+  const m = /^\d{4}-\d{2}-\d{2}/.exec(value || '');
+  return m ? m[0] : '';
+}
+
 function buildBookUrl(offer) {
-  if (offer.deepLink) return offer.deepLink;
+  if (offer.deepLink && isSpecificLink(offer.deepLink)) return offer.deepLink;
   try {
     const segs = offer.itineraries[0].segments;
     const orig = segs[0].departure.iataCode;
     const dst  = segs[segs.length - 1].arrival.iataCode;
-    const dep  = offer.startDate || (segs[0].departure.at || '').split('T')[0];
+    const dep  = dateOnly(offer.startDate) || dateOnly(segs[0].departure.at);
     if (!dep) throw new Error('sin fecha');
 
     const legs = [{ date: dep, from: orig, to: dst }];
     if ((offer.priceType || lastSearch.priceType || 'roundtrip') === 'roundtrip') {
-      const ret = offer.endDate
-        || (offer.itineraries[1]?.segments?.[0]?.departure?.at || '').split('T')[0]
+      const ret = dateOnly(offer.endDate)
+        || dateOnly(offer.itineraries[1]?.segments?.[0]?.departure?.at)
         || (lastSearch.returnOffset ? addDaysStr(dep, lastSearch.returnOffset) : '')
-        || (lastMode === 'date' ? lastSearch.dateTo : '');
+        || (lastMode === 'date' ? dateOnly(lastSearch.dateTo) : '');
       if (ret) legs.push({ date: ret, from: dst, to: orig });
     }
     return buildGoogleFlightsUrl(legs, { adults: lastSearch.adults, cabin: lastSearch.cabin });
