@@ -1,5 +1,5 @@
 // ─── Next Flight · Service Worker ────────────────────────────────────
-const CACHE   = 'next-flight-v1';
+const CACHE   = 'next-flight-v2';
 const ASSETS  = [
   './',
   './index.html',
